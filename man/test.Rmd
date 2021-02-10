@@ -1,0 +1,247 @@
+---
+title: "test"
+author: "Devin Jevian"
+date: "1/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+```{r}
+library(dplyr)
+library(rvest)
+library(quantmod)
+library(TTR)
+library(highcharter)
+```
+
+
+# IDX Web Scraping
+
+```{r}
+url <- "https://id.wikipedia.org/wiki/Daftar_perusahaan_yang_tercatat_di_Bursa_Efek_Indonesia"
+
+JKSE_components_1 <- url %>%
+  read_html() %>%
+  html_nodes(xpath = "/html/body/div[3]/div[3]/div[5]/div[1]/table[1]") %>%
+  html_table()
+
+JKSE_components_2 <- url %>%
+  read_html() %>%
+  html_nodes(xpath = "/html/body/div[3]/div[3]/div[5]/div[1]/table[2]") %>%
+  html_table()
+
+JKSE_components_3 <- url %>%
+  read_html() %>%
+  html_nodes(xpath = "/html/body/div[3]/div[3]/div[5]/div[1]/table[3]") %>%
+  html_table()
+
+JKSE_components_4 <- url %>%
+  read_html() %>%
+  html_nodes(xpath = "/html/body/div[3]/div[3]/div[5]/div[1]/table[4]") %>%
+  html_table()
+
+JKSE_components_5 <- url %>%
+  read_html() %>%
+  html_nodes(xpath = "/html/body/div[3]/div[3]/div[5]/div[1]/table[5]") %>%
+  html_table()
+
+JKSE_components_6 <- url %>%
+  read_html() %>%
+  html_nodes(xpath = "/html/body/div[3]/div[3]/div[5]/div[1]/table[6]") %>%
+  html_table()
+
+JKSE_components_7 <- url %>%
+  read_html() %>%
+  html_nodes(xpath = "/html/body/div[3]/div[3]/div[5]/div[1]/table[7]") %>%
+  html_table()
+
+JKSE_components_8 <- url %>%
+  read_html() %>%
+  html_nodes(xpath = "/html/body/div[3]/div[3]/div[5]/div[1]/table[8]") %>%
+  html_table()
+
+JKSE_components_9 <- url %>%
+  read_html() %>%
+  html_nodes(xpath = "/html/body/div[3]/div[3]/div[5]/div[1]/table[9]") %>%
+  html_table()
+
+JKSE_components <- JKSE_components_1[[1]] %>%
+  full_join(JKSE_components_2[[1]]) %>%
+  full_join(JKSE_components_3[[1]]) %>%
+  full_join(JKSE_components_4[[1]]) %>%
+  full_join(JKSE_components_5[[1]]) %>%
+  full_join(JKSE_components_6[[1]]) %>%
+  full_join(JKSE_components_7[[1]]) %>%
+  full_join(JKSE_components_8[[1]]) %>%
+  full_join(JKSE_components_9[[1]])
+
+components <- JKSE_components %>% janitor::clean_names()
+
+components <- components[, -4]
+
+components$tanggal_pencatatan <- stringr::str_extract(
+  string = components$tanggal_pencatatan,
+  pattern = "(....-..-..)")
+
+components$tanggal_pencatatan <- as.Date(components$tanggal_pencatatan)
+
+components$kode <- components$kode <- stringr::str_extract(
+  string = components$kode,
+  pattern = " ....") %>%
+  stringr::str_trim(.)
+
+components$kode <- paste(components$kode, "JK", sep = ".")
+
+components
+
+# save the listed company into .rds
+
+saveRDS(object = components,
+        file = "company_list.rds",
+        compress = T)
+
+components <- readRDS("company_list.rds")
+components[,1]
+```
+
+# Get data TQ
+
+```{r}
+# stock_list <- tq_get(components$kode,
+#                      from = Sys.Date() - lubridate::years(5),
+#                      to = Sys.Date())
+# 
+# stock_list <- na.omit(stock_list)
+# 
+# stock_list$symbol <- stringr::str_remove(
+#   string = stock_list$symbol,
+#   pattern = ".JK")
+# 
+# 
+# write.csv(x = stock_list,
+#           file = "stock_list.csv")
+# 
+# colSums(is.na(stock_list))
+# length(unique(stock_list$symbol))
+```
+
+## Read saved stock_list
+
+```{r}
+# stock_list <- vroom::vroom("stock_list.csv")
+```
+## Wrangling
+
+```{r}
+# stocks <- c("BMRI", "ANTM", "UNVR") #replace this with input$stocks
+# 
+# Ra <- stock_list %>%
+#   filter(symbol %in% stocks) %>%
+#   group_by(symbol) %>%
+#   tq_transmute(select = adjusted,
+#                mutate_fun = periodReturn,
+#                period = "daily",
+#                col_rename = "Ra")
+# Ra
+```
+
+```{r}
+# Rb <- "^JKSE" %>%
+#     tq_get(from = Sys.Date() - lubridate::years(5),
+#            to   = Sys.Date()) %>%
+#     tq_transmute(select     = adjusted, 
+#                  mutate_fun = periodReturn, 
+#                  period     = "daily", 
+#                  col_rename = "Rb")
+# Rb
+```
+
+```{r}
+# RaRb <- left_join(Ra, Rb, by = c("date" = "date"))
+# RaRb
+```
+
+```{r}
+# RaRb_capm <- RaRb %>%
+#     tq_performance(Ra = Ra, 
+#                    Rb = Rb, 
+#                    performance_fun = table.CAPM)
+# RaRb_capm
+```
+
+```{r}
+# Ra %>%
+#     ggplot(aes(x = date, y = Ra)) +
+#     geom_bar(stat = "identity", fill = palette_light()[[1]]) +
+#     labs(title = "Stocks Returns",
+#          caption = "Shows an above-zero trend meaning positive returns",
+#          x = "", y = "Daily Returns") +
+#     geom_smooth(method = "lm") +
+#     theme_tq() +
+#     scale_color_tq() +
+#     scale_y_continuous(labels = scales::percent)
+```
+
+
+# Get stock data 
+
+```{r}
+stock <- getSymbols(Symbols = "ANTM.JK", # replace Symbols with input$stock_radio
+                    auto.assign = FALSE) %>% # turn off auto-assign
+  na.locf() # NA padding
+```
+
+
+# Visualize stock
+
+```{r}
+highchart(type = "stock") %>%
+  hc_add_series(stock) %>%
+  hc_add_dependency("modules/stock-tools.js") %>%
+  hc_add_dependency("modules/stock.js") %>%
+  hc_tooltip(valueDecimals = 2) %>%
+  hc_chart(stockTools = list(gui = list(enabled = TRUE))) %>%
+  hc_credits(enabled = TRUE,
+             text = "Source: Yahoo Finance")
+
+
+```
+
+# Add stats summary
+
+```{r}
+raw_data <- coredata(stock)
+```
+
+```{r}
+rsi <- RSI(price = stock[,4])
+merge(stock, rsi)
+```
+
+```{r}
+assign("indicator", SMA(stock[, 4], 20))
+assign("indicator", WMA(stock[, 4], 20))
+```
+
+```{r}
+library(TTR)
+funlist_TTR <- lsf.str("package:TTR")
+library(stringr)
+cleaned_1 <- str_remove(string = funlist_TTR, pattern = ": *")
+cleaned_1 <- cleaned_1[!grepl("run*", cleaned_1)]
+saveRDS(object = cleaned_1,
+        file = "function_list_TTR.rds")
+```
+
+
+
+
+
+
+
+
+

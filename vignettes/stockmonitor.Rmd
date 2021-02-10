@@ -1,0 +1,36 @@
+---
+title: "stockmonitor"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{stockmonitor}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(stockmonitor)
+```
+
+# Preface
+This modularized shiny apps is created using `golem` framework. 
+
+# Potential Use
+- Stock screener: to help investor pick stock using certain indicator (fundamental, technical, and strategy)
+- Backtest strategy: help investor backtest their own strategy under certain period
+- Portfolio builder: help investor build portfolio 
+- Watchlist: monitor stock movement
+
+# 
+
+#
+
+#
+
+
